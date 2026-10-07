@@ -25,12 +25,15 @@ _DIRECT_LANGUAGE_MAP: dict[str, str] = {
     "ukr": "CYRILLIC",
 }
 
+# German uses the PP-OCRv6 multilingual recognizer (same file as "en"),
+# not the LATIN script model. See select_single_language.
+_GERMAN_LANGUAGE = "deu"
+
 _LATIN_LANGUAGE_CODES: set[str] = {
     "afr",
     "cat",
     "ces",
     "dan",
-    "deu",
     "est",
     "eus",
     "fin",
@@ -61,7 +64,7 @@ _LATIN_LANGUAGE_CODES: set[str] = {
 }
 
 SUPPORTED_LANGUAGE_CODES: frozenset[str] = frozenset(
-    set(_DIRECT_LANGUAGE_MAP) | _LATIN_LANGUAGE_CODES
+    set(_DIRECT_LANGUAGE_MAP) | _LATIN_LANGUAGE_CODES | {_GERMAN_LANGUAGE}
 )
 
 
@@ -73,8 +76,22 @@ def normalize_languages(languages: Sequence[str] | None) -> list[str]:
     ]
 
 
+def _split_language_codes(languages: Sequence[str]) -> list[str]:
+    codes: list[str] = []
+    for language in languages:
+        codes.extend(part for part in language.split("+") if part)
+    return codes
+
+
 def select_single_language(options: Any) -> str:
-    languages = normalize_languages(getattr(options, "languages", None))
+    languages = _split_language_codes(
+        normalize_languages(getattr(options, "languages", None))
+    )
+    # Production passes deu+eng. PP-OCRv6 has one recognizer, so German wins.
+    german_pair = {_GERMAN_LANGUAGE, "eng"}
+    if languages and set(languages) <= german_pair and _GERMAN_LANGUAGE in languages:
+        return _GERMAN_LANGUAGE
+
     if len(languages) != 1:
         raise BadArgsError(
             "RapidOCR supports exactly one language. "
@@ -82,10 +99,6 @@ def select_single_language(options: Any) -> str:
         )
 
     language = languages[0]
-    if "+" in language:
-        raise BadArgsError(
-            "RapidOCR does not support language combinations like eng+fra."
-        )
 
     if language not in SUPPORTED_LANGUAGE_CODES:
         supported = ", ".join(sorted(SUPPORTED_LANGUAGE_CODES))
@@ -98,6 +111,8 @@ def select_single_language(options: Any) -> str:
 
 def map_language_to_langrec_name(language: str) -> str:
     normalized = language.lower()
+    if normalized == _GERMAN_LANGUAGE:
+        raise KeyError(normalized)
     if normalized in _DIRECT_LANGUAGE_MAP:
         return _DIRECT_LANGUAGE_MAP[normalized]
     if normalized in _LATIN_LANGUAGE_CODES:

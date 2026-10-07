@@ -10,11 +10,12 @@ Supported:
 - `hOCR` output path (`--pdf-renderer auto` or `--pdf-renderer fpdf2`)
 - ONNXRuntime backend only
 - Single language selection from `-l/--language`
+- `deu` and `deu+eng` on PP-OCRv6 small (same recognizer file as English), with `scan_res` in the hOCR page so the text layer matches the raster DPI
 
 Not supported:
 
 - `--pdf-renderer sandwich`
-- multi-language combinations such as `-l eng+fra`
+- multi-language combinations other than `deu+eng`
 
 ## Installation
 

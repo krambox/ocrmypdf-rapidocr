@@ -79,6 +79,8 @@ def build_hocr_document(
     page_height: int,
     language: str,
     lines: list[HocrLine],
+    dpi_x: int = 400,
+    dpi_y: int = 400,
 ) -> str:
     hocr_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -92,7 +94,10 @@ def build_hocr_document(
         '<meta name="ocr-capabilities" content="ocr_page ocr_carea ocr_par ocr_line ocrx_word" />',
         "</head>",
         "<body>",
-        f'<div class="ocr_page" id="page_1" title="bbox 0 0 {page_width} {page_height}">',
+        (
+            f'<div class="ocr_page" id="page_1" '
+            f'title="bbox 0 0 {page_width} {page_height}; scan_res {dpi_x} {dpi_y}">'
+        ),
     ]
 
     for line_id, (text, bbox, confidence) in enumerate(lines, start=1):
